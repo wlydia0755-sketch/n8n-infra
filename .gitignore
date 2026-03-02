@@ -1,0 +1,20 @@
+# 忽略敏感信息
+.env
+
+# 忽略数据库备份文件
+backup/
+
+# Docker 数据卷（n8n_data 和 postgres_data）
+n8n_data/
+postgres_data/
+
+# 日志文件
+*.log
+
+# 编辑器或临时文件
+.vscode/
+.idea/
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
