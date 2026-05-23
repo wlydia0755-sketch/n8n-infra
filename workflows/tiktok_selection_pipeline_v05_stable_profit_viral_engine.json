@@ -1,0 +1,2660 @@
+{
+  "name": "tiktok_selection_pipeline_v05_stable_profit_viral_engine",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b71cec27-0351-4986-8cee-2fb326918556",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8154245c-7696-4cf4-8504-3b867c4380f3",
+      "name": "Set Params",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        -464,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nfunction toNumber(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? n : fallback;\n}\n\nfunction toBool(value) {\n  if (value === true || value === \"true\" || value === 1 || value === \"1\") return true;\n  return false;\n}\n\nconst videoId = String(item.video_id || \"\").trim();\n\nif (!videoId) {\n  return {\n    json: {\n      ...item,\n      valid: false,\n      invalid_reason: \"missing_video_id\"\n    }\n  };\n}\n\nconst views = toNumber(item.views);\nconst likes = toNumber(item.likes);\nconst comments = toNumber(item.comments);\nconst shares = toNumber(item.shares);\n\nconst sellPrice = toNumber(item.sell_price);\nconst productCost = toNumber(item.product_cost);\nconst shippingCost = toNumber(item.shipping_cost, 4.5);\n\nconst createdAtRaw = item.created_at || item.posted_at || item.publish_time;\nconst createdAt = createdAtRaw ? new Date(createdAtRaw) : null;\nconst now = new Date();\n\nlet hoursSincePost = 24;\nif (createdAt && !Number.isNaN(createdAt.getTime())) {\n  hoursSincePost = Math.max((now - createdAt) / 1000 / 60 / 60, 1);\n}\n\nreturn {\n  json: {\n    ...item,\n    video_id: videoId,\n    title: String(item.title || \"\").trim(),\n    author: String(item.author || \"\").trim(),\n    views,\n    likes,\n    comments,\n    shares,\n    sell_price: sellPrice,\n    product_cost: productCost,\n    shipping_cost: shippingCost,\n    same_product_count: toNumber(item.same_product_count),\n    comment_buy_intent_count: toNumber(item.comment_buy_intent_count),\n    creator_count: toNumber(item.creator_count),\n    has_product_link: toBool(item.has_product_link),\n    supplier_available: toBool(item.supplier_available),\n    hours_since_post: hoursSincePost,\n    valid: true,\n    invalid_reason: null\n  }\n};"
+      },
+      "id": "ce3ef2b5-724c-40fd-beb6-5f45e67cca47",
+      "name": "Clean Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b886a80f-b436-4fc2-970f-53877e846dec",
+              "leftValue": "={{ (Number($json.score || 0) >= 60) || (Number($json.viral_score || 0) >= 70) }}",
+              "rightValue": 60,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -176
+      ],
+      "id": "b0b9d920-12be-4409-97dc-d73b09d7be8a",
+      "name": "Filter Valid Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      video_id: \"real_001\",\n      title: \"viral jewelry test\",\n      author: \"creator_a\",\n      views: 12000,\n      likes: 900,\n      comments: 80,\n      shares: 120,\n      created_at: \"2026-04-28T10:00:00Z\",\n      sell_price: 39.9,\n      product_cost: 8.5,\n      shipping_cost: 4.5,\n      same_product_count: 4,\n      comment_buy_intent_count: 12,\n      creator_count: 5,\n      has_product_link: true,\n      supplier_available: true\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        -176
+      ],
+      "id": "df450b1d-b01e-4fb9-950e-6444486eda8f",
+      "name": "Real Data Input (Manual)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e4d8325-e5ae-4e3e-a5ae-641f6cbea2fa",
+              "name": "min_views ",
+              "value": "1000",
+              "type": "string"
+            },
+            {
+              "id": "8a912e19-96ea-4417-99aa-f015e8b029e6",
+              "name": "min_score",
+              "value": "60",
+              "type": "string"
+            },
+            {
+              "id": "657aca85-423d-42c4-91f1-7782b72ce17e",
+              "name": "viral_threshold",
+              "value": "70",
+              "type": "string"
+            },
+            {
+              "id": "41159b6d-ca70-415c-8094-a058b268c3a9",
+              "name": "watchlist_score_threshold",
+              "value": "55",
+              "type": "string"
+            },
+            {
+              "id": "61930771-cbb4-447c-acf2-b98c58a8593e",
+              "name": "min_profit_score",
+              "value": "60",
+              "type": "string"
+            },
+            {
+              "id": "670d725f-d772-4a27-b940-63dad132fdd6",
+              "name": "min_commercial_score",
+              "value": "50",
+              "type": "string"
+            },
+            {
+              "id": "ed929298-7d01-4b27-9e91-be7fab46c8a4",
+              "name": "platform_fee_rate",
+              "value": "0.08",
+              "type": "string"
+            },
+            {
+              "id": "4f7e2402-1cc6-4167-a5b3-dce1fda1b9b0",
+              "name": "default_shipping_cost",
+              "value": "4.5",
+              "type": "string"
+            },
+            {
+              "id": "99d4d0cb-d1de-4f19-94b9-2839359332ae",
+              "name": "default_ad_cost",
+              "value": "0",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -688,
+        -176
+      ],
+      "id": "4038f39b-f2da-40e8-860e-8002ffa5af2a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const views = Number($json.views || 0);\nconst likes = Number($json.likes || 0);\nconst comments = Number($json.comments || 0);\nconst shares = Number($json.shares || 0);\nconst hours = Math.max(Number($json.hours_since_post || 24), 1);\n\nconst likeRate = likes / Math.max(views, 1);\nconst commentRate = comments / Math.max(views, 1);\nconst shareRate = shares / Math.max(views, 1);\n\nconst velocity = views / hours;\n\nlet viralScore =\n  velocity * 0.0004 +\n  shareRate * 3500 +\n  commentRate * 2500 +\n  likeRate * 300;\n\nviralScore = Math.min(100, Math.max(0, viralScore));\nviralScore = Math.round(viralScore * 100) / 100;\n\nlet viralLevel = \"LOW\";\n\nif (viralScore >= 80) {\n  viralLevel = \"EXPLOSIVE\";\n} else if (viralScore >= 70) {\n  viralLevel = \"HIGH\";\n} else if (viralScore >= 50) {\n  viralLevel = \"MEDIUM\";\n}\n\nreturn {\n  json: {\n    ...$json,\n    like_rate: Math.round(likeRate * 10000) / 10000,\n    comment_rate: Math.round(commentRate * 10000) / 10000,\n    share_rate: Math.round(shareRate * 10000) / 10000,\n    velocity: Math.round(velocity * 100) / 100,\n    viral_score: viralScore,\n    viral_level: viralLevel\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -176
+      ],
+      "id": "3bb216e8-a13c-401e-8006-a875c139b418",
+      "name": "Viral Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const views = Number($json.views || 0);\nconst likes = Number($json.likes || 0);\nconst comments = Number($json.comments || 0);\nconst shares = Number($json.shares || 0);\n\nconst likeRate = Number($json.like_rate || likes / Math.max(views, 1));\nconst commentRate = Number($json.comment_rate || comments / Math.max(views, 1));\nconst shareRate = Number($json.share_rate || shares / Math.max(views, 1));\n\nlet score = 0;\n\nif (views >= 100000) score += 25;\nelse if (views >= 50000) score += 20;\nelse if (views >= 10000) score += 15;\nelse if (views >= 3000) score += 10;\nelse if (views >= 1000) score += 5;\n\nif (likeRate >= 0.08) score += 25;\nelse if (likeRate >= 0.05) score += 20;\nelse if (likeRate >= 0.03) score += 15;\nelse if (likeRate >= 0.015) score += 8;\n\nif (commentRate >= 0.01) score += 20;\nelse if (commentRate >= 0.005) score += 15;\nelse if (commentRate >= 0.002) score += 8;\n\nif (shareRate >= 0.01) score += 20;\nelse if (shareRate >= 0.005) score += 15;\nelse if (shareRate >= 0.002) score += 8;\n\nif (($json.title || \"\").length >= 8) score += 10;\n\nscore = Math.min(100, score);\n\nlet scoreLevel = \"LOW\";\nif (score >= 75) scoreLevel = \"HIGH\";\nelse if (score >= 60) scoreLevel = \"MEDIUM\";\n\nreturn {\n  json: {\n    ...$json,\n    score,\n    score_level: scoreLevel\n  }\n};"
+      },
+      "id": "698bf7f6-ab6d-4ce9-80cc-9267319a90f6",
+      "name": "Score Candidate V3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const sellPrice = Number($json.sell_price || 0);\nconst productCost = Number($json.product_cost || 0);\nconst shippingCost = Number($json.shipping_cost || 4.5);\nconst feeRate = Number($json.platform_fee_rate || 0.08);\nconst adCost = Number($json.ad_cost_estimate || 0);\n\nconst platformFee = sellPrice * feeRate;\nconst grossProfit = sellPrice - productCost - shippingCost - platformFee;\nconst netProfit = grossProfit - adCost;\nconst marginRate = sellPrice > 0 ? netProfit / sellPrice : 0;\n\nlet profitScore = 0;\n\nif (sellPrice <= 0 || productCost <= 0) {\n  profitScore = 0;\n} else if (marginRate >= 0.5) {\n  profitScore = 100;\n} else if (marginRate >= 0.4) {\n  profitScore = 85;\n} else if (marginRate >= 0.3) {\n  profitScore = 70;\n} else if (marginRate >= 0.2) {\n  profitScore = 50;\n} else if (marginRate >= 0.1) {\n  profitScore = 30;\n} else {\n  profitScore = 10;\n}\n\nlet profitLevel = \"LOW\";\nif (profitScore >= 80) profitLevel = \"HIGH\";\nelse if (profitScore >= 60) profitLevel = \"MEDIUM\";\n\nreturn {\n  json: {\n    ...$json,\n    platform_fee: Math.round(platformFee * 100) / 100,\n    gross_profit: Math.round(grossProfit * 100) / 100,\n    net_profit: Math.round(netProfit * 100) / 100,\n    margin_rate: Math.round(marginRate * 10000) / 10000,\n    profit_score: profitScore,\n    profit_level: profitLevel\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -272
+      ],
+      "id": "bc8c084f-0711-4628-8eea-d8b2628f84be",
+      "name": "Profit Estimate Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const baseScore = Number($json.score || 0);\nconst viralScore = Number($json.viral_score || 0);\nconst commercialScore = Number($json.commercial_score || 0);\nconst profitScore = Number($json.profit_score || 0);\nconst netProfit = Number($json.net_profit || 0);\n\nconst minNetProfit = 8;\n\nconst finalScore =\n  baseScore * 0.2 +\n  viralScore * 0.25 +\n  commercialScore * 0.25 +\n  profitScore * 0.3;\n\nlet decision = \"REJECTED\";\nlet reasons = [];\n\nif (baseScore >= 60) reasons.push(\"base_score_pass\");\nif (viralScore >= 70) reasons.push(\"viral_pass\");\nif (commercialScore >= 50) reasons.push(\"commercial_pass\");\nif (profitScore >= 60) reasons.push(\"profit_pass\");\nif (netProfit >= minNetProfit) reasons.push(\"net_profit_pass\");\n\nif (\n  finalScore >= 75 &&\n  profitScore >= 60 &&\n  commercialScore >= 50 &&\n  netProfit >= minNetProfit &&\n  (baseScore >= 60 || viralScore >= 70)\n) {\n  decision = \"WINNER\";\n} else if (\n  finalScore >= 55 &&\n  profitScore >= 40 &&\n  netProfit > 0 &&\n  (commercialScore >= 35 || viralScore >= 70)\n) {\n  decision = \"WATCHLIST\";\n}\n\nlet action = \"ignore\";\n\nif (decision === \"WINNER\") {\n  action = \"prepare_product_test\";\n} else if (decision === \"WATCHLIST\") {\n  action = \"monitor_or_manual_review\";\n}\n\nreturn {\n  json: {\n    ...$json,\n    final_score: Math.round(finalScore * 100) / 100,\n    decision,\n    selected: decision === \"WINNER\",\n    winner_reason: reasons.join(\",\"),\n    next_action: action,\n    updated_at: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -272
+      ],
+      "id": "ffc409eb-1e27-4743-8e5f-f9f562d93a47",
+      "name": "Final Winner Decision"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const hasProductLink = $json.has_product_link === true;\nconst sameProductCount = Number($json.same_product_count || 0);\nconst buyIntent = Number($json.comment_buy_intent_count || 0);\nconst creatorCount = Number($json.creator_count || 0);\nconst supplierAvailable = $json.supplier_available === true;\n\nlet commercialScore = 0;\nlet reasons = [];\n\nif (hasProductLink) {\n  commercialScore += 25;\n  reasons.push(\"has_product_link\");\n}\n\nif (sameProductCount >= 5) {\n  commercialScore += 25;\n  reasons.push(\"many_same_product_videos\");\n} else if (sameProductCount >= 3) {\n  commercialScore += 18;\n  reasons.push(\"some_same_product_videos\");\n}\n\nif (buyIntent >= 20) {\n  commercialScore += 25;\n  reasons.push(\"strong_comment_buy_intent\");\n} else if (buyIntent >= 5) {\n  commercialScore += 18;\n  reasons.push(\"comment_buy_intent\");\n}\n\nif (creatorCount >= 5) {\n  commercialScore += 15;\n  reasons.push(\"multiple_creators\");\n} else if (creatorCount >= 3) {\n  commercialScore += 10;\n  reasons.push(\"some_creators\");\n}\n\nif (supplierAvailable) {\n  commercialScore += 20;\n  reasons.push(\"supplier_available\");\n}\n\ncommercialScore = Math.min(100, commercialScore);\n\nlet commercialLevel = \"LOW\";\nif (commercialScore >= 75) commercialLevel = \"HIGH\";\nelse if (commercialScore >= 50) commercialLevel = \"MEDIUM\";\n\nreturn {\n  json: {\n    ...$json,\n    commercial_score: commercialScore,\n    commercial_level: commercialLevel,\n    commercial_reasons: reasons.join(\",\")\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -272
+      ],
+      "id": "7c0ec45d-2806-45f2-9950-498a1f202492",
+      "name": "Commercial Signal Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    ...$json,\n    commercial_score: $json.commercial_score || 0,\n    profit_score: $json.profit_score || 0,\n    final_score: $json.final_score || 0,\n    decision: \"REJECTED\",\n    selected: false,\n    winner_reason: \"failed_score_and_viral_filter\",\n    updated_at: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -80
+      ],
+      "id": "7269f90d-b2a2-44dc-b94e-b3496854b7e7",
+      "name": "Mark Early Rejected"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "97219214-da50-4b76-b65b-6aa011aff84f",
+              "leftValue": "={{ $json.decision === \"WINNER\" }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        -272
+      ],
+      "id": "68339de8-d5ba-4717-8470-883ad172bb52",
+      "name": "Filter Winner"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "66f00669-c46b-4703-9182-20c5e6fc693b",
+              "leftValue": "={{ $json.decision === \"WATCHLIST\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1984,
+        -176
+      ],
+      "id": "30b45cc6-28d5-422b-a462-3f4aee98051e",
+      "name": "Filter Watchlist"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6c7e606c-dda2-4b5f-814d-c848e9a6ae6a",
+              "leftValue": "={{ $json.decision === \"REJECTED\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2208,
+        -80
+      ],
+      "id": "301c726d-02dc-4a0e-900f-17938bac1a1b",
+      "name": "Filter Rejected"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tiktok_selection_results",
+          "mode": "list",
+          "cachedResultName": "tiktok_selection_results"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "selected": "={{ $json.selected }}",
+            "has_product_link": "={{ $json.has_product_link }}",
+            "supplier_available": "={{ $json.supplier_available }}",
+            "views": "={{$json.views}}",
+            "likes": "={{$json.likes}}",
+            "comments": "={{$json.comments}}",
+            "shares": "={{$json.shares}}",
+            "like_rate": "={{ $json.like_rate }}",
+            "comment_rate": "={{ $json.comment_rate }}",
+            "share_rate": "={{ $json.share_rate }}",
+            "score": "={{$json.score}}",
+            "viral_score": "={{$json.viral_score}}",
+            "commercial_score": "={{$json.commercial_score}}",
+            "profit_score": "={{$json.profit_score}}",
+            "final_score": "={{$json.final_score}}",
+            "velocity": "={{ $json.velocity }}",
+            "hours_since_post": "={{ $json.hours_since_post }}",
+            "sell_price": "={{ $json.sell_price }}",
+            "product_cost": "={{ $json.product_cost }}",
+            "shipping_cost": "={{ $json.shipping_cost }}",
+            "platform_fee": "={{ $json.platform_fee }}",
+            "gross_profit": "={{ $json.gross_profit }}",
+            "net_profit": "={{ $json.net_profit }}",
+            "margin_rate": "={{ $json.margin_rate }}",
+            "same_product_count": "={{ $json.same_product_count }}",
+            "comment_buy_intent_count": "={{ $json.comment_buy_intent_count }}",
+            "creator_count": "={{ $json.creator_count }}",
+            "video_id": "={{$json.video_id}}",
+            "title": "={{$json.title}}",
+            "author": "={{$json.author}}",
+            "decision": "={{$json.decision}}",
+            "winner_reason": "={{$json.winner_reason}}",
+            "updated_at": "= {{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "video_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "views",
+              "displayName": "views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "likes",
+              "displayName": "likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comments",
+              "displayName": "comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shares",
+              "displayName": "shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "like_rate",
+              "displayName": "like_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_rate",
+              "displayName": "comment_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "share_rate",
+              "displayName": "share_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "selected",
+              "displayName": "selected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "engagement",
+              "displayName": "engagement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "quality_tag",
+              "displayName": "quality_tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_risk",
+              "displayName": "compliance_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_action",
+              "displayName": "compliance_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "product_hint",
+              "displayName": "product_hint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "search_keywords",
+              "displayName": "search_keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "viral_score",
+              "displayName": "viral_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "commercial_score",
+              "displayName": "commercial_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "profit_score",
+              "displayName": "profit_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "final_score",
+              "displayName": "final_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "velocity",
+              "displayName": "velocity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "hours_since_post",
+              "displayName": "hours_since_post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sell_price",
+              "displayName": "sell_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "product_cost",
+              "displayName": "product_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shipping_cost",
+              "displayName": "shipping_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "platform_fee",
+              "displayName": "platform_fee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "gross_profit",
+              "displayName": "gross_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "net_profit",
+              "displayName": "net_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "margin_rate",
+              "displayName": "margin_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "same_product_count",
+              "displayName": "same_product_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_buy_intent_count",
+              "displayName": "comment_buy_intent_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "creator_count",
+              "displayName": "creator_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "has_product_link",
+              "displayName": "has_product_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "supplier_available",
+              "displayName": "supplier_available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "winner_reason",
+              "displayName": "winner_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2208,
+        -464
+      ],
+      "id": "7b2cc1eb-981c-4b79-be04-238b45a03ae3",
+      "name": "DB Write - Winner",
+      "credentials": {
+        "postgres": {
+          "id": "YHX8vfWt59rfg8pc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tiktok_selection_results",
+          "mode": "list",
+          "cachedResultName": "tiktok_selection_results"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "views": "={{ $json.views }}",
+            "likes": "={{ $json.likes }}",
+            "comments": "={{ $json.comments }}",
+            "shares": "={{ $json.shares }}",
+            "like_rate": "={{ $json.like_rate }}",
+            "comment_rate": "={{ $json.comment_rate }}",
+            "share_rate": "={{ $json.share_rate }}",
+            "score": "={{ $json.score }}",
+            "viral_score": "={{ $json.viral_score }}",
+            "commercial_score": "={{ $json.commercial_score }}",
+            "profit_score": "={{ $json.profit_score }}",
+            "final_score": "={{ $json.final_score }}",
+            "velocity": "={{ $json.velocity }}",
+            "hours_since_post": "={{ $json.hours_since_post }}",
+            "sell_price": "={{ $json.sell_price }}",
+            "product_cost": "={{ $json.product_cost }}",
+            "shipping_cost": "={{ $json.shipping_cost }}",
+            "platform_fee": "={{ $json.platform_fee }}",
+            "gross_profit": "={{ $json.gross_profit }}",
+            "net_profit": "={{ $json.net_profit }}",
+            "margin_rate": "={{ $json.margin_rate }}",
+            "same_product_count": "={{ $json.same_product_count }}",
+            "comment_buy_intent_count": "={{ $json.comment_buy_intent_count }}",
+            "creator_count": "={{ $json.creator_count }}",
+            "video_id": "={{ $json.video_id }}",
+            "title": "={{ $json.title }}",
+            "author": "={{ $json.author }}",
+            "decision": "={{ $json.decision }}",
+            "winner_reason": "={{ $json.winner_reason }}",
+            "selected": "={{ $json.selected }}",
+            "has_product_link": "={{ $json.has_product_link }}",
+            "supplier_available": "={{ $json.supplier_available }}",
+            "updated_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "video_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "views",
+              "displayName": "views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "likes",
+              "displayName": "likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comments",
+              "displayName": "comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shares",
+              "displayName": "shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "like_rate",
+              "displayName": "like_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_rate",
+              "displayName": "comment_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "share_rate",
+              "displayName": "share_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "selected",
+              "displayName": "selected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "engagement",
+              "displayName": "engagement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "quality_tag",
+              "displayName": "quality_tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_risk",
+              "displayName": "compliance_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_action",
+              "displayName": "compliance_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "product_hint",
+              "displayName": "product_hint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "search_keywords",
+              "displayName": "search_keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "viral_score",
+              "displayName": "viral_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "commercial_score",
+              "displayName": "commercial_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "profit_score",
+              "displayName": "profit_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "final_score",
+              "displayName": "final_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "velocity",
+              "displayName": "velocity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "hours_since_post",
+              "displayName": "hours_since_post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sell_price",
+              "displayName": "sell_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "product_cost",
+              "displayName": "product_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shipping_cost",
+              "displayName": "shipping_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "platform_fee",
+              "displayName": "platform_fee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "gross_profit",
+              "displayName": "gross_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "net_profit",
+              "displayName": "net_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "margin_rate",
+              "displayName": "margin_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "same_product_count",
+              "displayName": "same_product_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_buy_intent_count",
+              "displayName": "comment_buy_intent_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "creator_count",
+              "displayName": "creator_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "has_product_link",
+              "displayName": "has_product_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "supplier_available",
+              "displayName": "supplier_available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "winner_reason",
+              "displayName": "winner_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2432,
+        -272
+      ],
+      "id": "fde79c33-8e87-4425-8abe-73ca5d2a561b",
+      "name": "DB Write - Watchlist",
+      "credentials": {
+        "postgres": {
+          "id": "YHX8vfWt59rfg8pc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if (!$json.video_id) {\n  throw new Error(\"Missing video_id\");\n}\n\nif (!$json.decision) {\n  throw new Error(\"Missing decision\");\n}\n\n// 数值清洗\nconst cleanNumber = (v) => (isNaN(Number(v)) ? 0 : Number(v));\n\nreturn {\n  json: {\n    ...$json,\n    views: cleanNumber($json.views),\n    likes: cleanNumber($json.likes),\n    comments: cleanNumber($json.comments),\n    shares: cleanNumber($json.shares),\n    final_score: cleanNumber($json.final_score),\n    updated_at: $json.updated_at || new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -80
+      ],
+      "id": "0e245506-e862-4204-9c2f-d41b8a0e3558",
+      "name": "Mark Final Rejected"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tiktok_selection_results",
+          "mode": "list",
+          "cachedResultName": "tiktok_selection_results"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "selected": "={{ $json.selected }}",
+            "supplier_available": "={{ $json.supplier_available }}",
+            "views": "={{ $json.views }}",
+            "likes": "={{ $json.likes }}",
+            "comments": "={{ $json.comments }}",
+            "like_rate": "={{ $json.like_rate }}",
+            "comment_rate": "={{ $json.comment_rate }}",
+            "score": "={{ $json.score }}",
+            "viral_score": "={{ $json.viral_score }}",
+            "commercial_score": "={{ $json.commercial_score }}",
+            "profit_score": "={{ $json.profit_score }}",
+            "final_score": "={{ $json.final_score }}",
+            "velocity": "={{ $json.velocity }}",
+            "hours_since_post": "={{ $json.hours_since_post }}",
+            "sell_price": "={{ $json.sell_price }}",
+            "product_cost": "={{ $json.product_cost }}",
+            "shipping_cost": "={{ $json.shipping_cost }}",
+            "platform_fee": "={{ $json.platform_fee }}",
+            "gross_profit": "={{ $json.gross_profit }}",
+            "margin_rate": "={{ $json.margin_rate }}\n",
+            "same_product_count": "={{ $json.same_product_count }}",
+            "comment_buy_intent_count": "={{ $json.comment_buy_intent_count }}",
+            "creator_count": "={{ $json.creator_count }}",
+            "video_id": "={{ $json.video_id }}",
+            "title": "={{ $json.title }}",
+            "author": "={{ $json.author }}",
+            "shares": "={{ $json.shares }}",
+            "share_rate": "={{ $json.share_rate }}",
+            "decision": "={{ $json.decision }}",
+            "winner_reason": "={{ $json.winner_reason }}",
+            "has_product_link": "={{ $json.has_product_link }}",
+            "net_profit": "={{ $json.net_profit }}",
+            "updated_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "video_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "views",
+              "displayName": "views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "likes",
+              "displayName": "likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comments",
+              "displayName": "comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shares",
+              "displayName": "shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "like_rate",
+              "displayName": "like_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_rate",
+              "displayName": "comment_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "share_rate",
+              "displayName": "share_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "selected",
+              "displayName": "selected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "engagement",
+              "displayName": "engagement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "quality_tag",
+              "displayName": "quality_tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_risk",
+              "displayName": "compliance_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_action",
+              "displayName": "compliance_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "product_hint",
+              "displayName": "product_hint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "search_keywords",
+              "displayName": "search_keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "viral_score",
+              "displayName": "viral_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "commercial_score",
+              "displayName": "commercial_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "profit_score",
+              "displayName": "profit_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "final_score",
+              "displayName": "final_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "velocity",
+              "displayName": "velocity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "hours_since_post",
+              "displayName": "hours_since_post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sell_price",
+              "displayName": "sell_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "product_cost",
+              "displayName": "product_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shipping_cost",
+              "displayName": "shipping_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "platform_fee",
+              "displayName": "platform_fee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "gross_profit",
+              "displayName": "gross_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "net_profit",
+              "displayName": "net_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "margin_rate",
+              "displayName": "margin_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "same_product_count",
+              "displayName": "same_product_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_buy_intent_count",
+              "displayName": "comment_buy_intent_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "creator_count",
+              "displayName": "creator_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "has_product_link",
+              "displayName": "has_product_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "supplier_available",
+              "displayName": "supplier_available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "winner_reason",
+              "displayName": "winner_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2880,
+        -80
+      ],
+      "id": "e4c7d001-f794-48a9-a877-1d5f00d9121b",
+      "name": "DB Write - Rejected(Final)",
+      "credentials": {
+        "postgres": {
+          "id": "YHX8vfWt59rfg8pc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if (!$json.video_id) {\n  throw new Error(\"Missing video_id\");\n}\n\nif (!$json.decision) {\n  throw new Error(\"Missing decision\");\n}\n\n// 数值清洗\nconst cleanNumber = (v) => (isNaN(Number(v)) ? 0 : Number(v));\n\nreturn {\n  json: {\n    ...$json,\n    views: cleanNumber($json.views),\n    likes: cleanNumber($json.likes),\n    comments: cleanNumber($json.comments),\n    shares: cleanNumber($json.shares),\n    final_score: cleanNumber($json.final_score),\n    updated_at: $json.updated_at || new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        -464
+      ],
+      "id": "475c915e-b2ec-4dc1-a8af-8392ba70cba9",
+      "name": "Validate - Winner"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if (!$json.video_id) {\n  throw new Error(\"Missing video_id\");\n}\n\nif (![\"WINNER\", \"WATCHLIST\", \"REJECTED\"].includes($json.decision)) {\n  throw new Error(\"Invalid decision: \" + $json.decision);\n}\n\nreturn {\n  json: {\n    ...$json,\n    updated_at: $json.updated_at || new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        -80
+      ],
+      "id": "76ae0b04-b69f-4161-856c-d30dffb0a2de",
+      "name": "Validate - Rejected(Final)"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if (!$json.video_id) {\n  throw new Error(\"Missing video_id\");\n}\n\nif (!$json.decision) {\n  throw new Error(\"Missing decision\");\n}\n\n// 数值清洗\nconst cleanNumber = (v) => (isNaN(Number(v)) ? 0 : Number(v));\n\nreturn {\n  json: {\n    ...$json,\n    views: cleanNumber($json.views),\n    likes: cleanNumber($json.likes),\n    comments: cleanNumber($json.comments),\n    shares: cleanNumber($json.shares),\n    final_score: cleanNumber($json.final_score),\n    updated_at: $json.updated_at || new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        -272
+      ],
+      "id": "5f7428c5-5f7c-4ed2-9333-828fa9ad9128",
+      "name": "Validate - Watchlist"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  // 🟢 WINNER：高热度 + 高商业信号 + 高利润\n  {\n    json: {\n      video_id: \"test_win_001\",\n      title: \"viral jewelry summer trend\",\n      author: \"creator_a\",\n\n      views: 20000,\n      likes: 2000,\n      comments: 150,\n      shares: 300,\n\n      created_at: \"2026-04-28T10:00:00Z\",\n\n      sell_price: 39.9,\n      product_cost: 8,\n      shipping_cost: 5,\n\n      same_product_count: 5,\n      comment_buy_intent_count: 20,\n      creator_count: 5,\n\n      has_product_link: true,\n      supplier_available: true\n    }\n  },\n\n  // 🟡 WATCHLIST：能过有效筛选，但综合分不够 Winner\n  {\n    json: {\n      video_id: \"test_watch_001\",\n      title: \"mid jewelry potential item\",\n      author: \"creator_b\",\n\n      views: 12000,\n      likes: 700,\n      comments: 45,\n      shares: 35,\n\n      created_at: \"2026-04-28T10:00:00Z\",\n\n      sell_price: 29.9,\n      product_cost: 11,\n      shipping_cost: 6,\n\n      same_product_count: 3,\n      comment_buy_intent_count: 6,\n      creator_count: 3,\n\n      has_product_link: true,\n      supplier_available: true\n    }\n  },\n\n  // 🔴 REJECTED：流量弱 + 商业信号弱 + 利润差\n  {\n    json: {\n      video_id: \"test_reject_001\",\n      title: \"bad product low signal\",\n      author: \"creator_c\",\n\n      views: 1500,\n      likes: 50,\n      comments: 3,\n      shares: 1,\n\n      created_at: \"2026-04-28T10:00:00Z\",\n\n      sell_price: 19.9,\n      product_cost: 12,\n      shipping_cost: 8,\n\n      same_product_count: 1,\n      comment_buy_intent_count: 0,\n      creator_count: 1,\n\n      has_product_link: false,\n      supplier_available: false\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -176
+      ],
+      "id": "e19b3a6d-fd08-4c1a-8748-88c11becf508",
+      "name": "Generate Test Data"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    ...$json,\n    commercial_score: $json.commercial_score || 0,\n    profit_score: $json.profit_score || 0,\n    final_score: $json.final_score || 0,\n    decision: \"REJECTED\",\n    selected: false,\n    winner_reason: \"failed_score_and_viral_filter\",\n    updated_at: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -80
+      ],
+      "id": "3bd262da-5960-4736-8c0e-7341271ad73c",
+      "name": "Validate - Rejected(Early)"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tiktok_selection_results",
+          "mode": "list",
+          "cachedResultName": "tiktok_selection_results"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "selected": "={{ $json.selected }}",
+            "has_product_link": "={{ $json.has_product_link }}",
+            "supplier_available": false,
+            "views": "={{ $json.views }}",
+            "likes": "={{ $json.likes }}",
+            "comments": "={{ $json.comments }}",
+            "shares": "={{ $json.shares }}",
+            "like_rate": "={{ $json.like_rate }}",
+            "comment_rate": "={{ $json.comment_rate }}",
+            "share_rate": "={{ $json.share_rate }}",
+            "score": "={{ $json.score }}",
+            "viral_score": "={{ $json.viral_score }}",
+            "commercial_score": "={{ $json.commercial_score }}",
+            "profit_score": "={{ $json.profit_score }}",
+            "final_score": "={{ $json.final_score }}",
+            "velocity": "={{ $json.velocity }}",
+            "hours_since_post": "={{ $json.hours_since_post }}",
+            "sell_price": "={{ $json.sell_price }}",
+            "product_cost": "={{ $json.product_cost }}",
+            "shipping_cost": "={{ $json.shipping_cost }}",
+            "same_product_count": "={{ $json.same_product_count }}",
+            "comment_buy_intent_count": "={{ $json.comment_buy_intent_count }}",
+            "creator_count": "={{ $json.creator_count }}",
+            "video_id": "={{ $json.video_id }}",
+            "decision": "={{ $json.decision }}",
+            "winner_reason": "={{ $json.winner_reason }}",
+            "title": "={{ $json.title }}",
+            "updated_at": "={{ new Date().toISOString() }}",
+            "author": "={{ $json.author }}"
+          },
+          "matchingColumns": [
+            "video_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "views",
+              "displayName": "views",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "likes",
+              "displayName": "likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comments",
+              "displayName": "comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shares",
+              "displayName": "shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "like_rate",
+              "displayName": "like_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_rate",
+              "displayName": "comment_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "share_rate",
+              "displayName": "share_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "selected",
+              "displayName": "selected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "engagement",
+              "displayName": "engagement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "quality_tag",
+              "displayName": "quality_tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_risk",
+              "displayName": "compliance_risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "compliance_action",
+              "displayName": "compliance_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "product_hint",
+              "displayName": "product_hint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "search_keywords",
+              "displayName": "search_keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "viral_score",
+              "displayName": "viral_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "commercial_score",
+              "displayName": "commercial_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "profit_score",
+              "displayName": "profit_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "final_score",
+              "displayName": "final_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "velocity",
+              "displayName": "velocity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "hours_since_post",
+              "displayName": "hours_since_post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sell_price",
+              "displayName": "sell_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "product_cost",
+              "displayName": "product_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shipping_cost",
+              "displayName": "shipping_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "platform_fee",
+              "displayName": "platform_fee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "gross_profit",
+              "displayName": "gross_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "net_profit",
+              "displayName": "net_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "margin_rate",
+              "displayName": "margin_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "same_product_count",
+              "displayName": "same_product_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "comment_buy_intent_count",
+              "displayName": "comment_buy_intent_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "creator_count",
+              "displayName": "creator_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "has_product_link",
+              "displayName": "has_product_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "supplier_available",
+              "displayName": "supplier_available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "winner_reason",
+              "displayName": "winner_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1520,
+        -80
+      ],
+      "id": "8d2b42cc-4934-4019-9203-7e6d76932817",
+      "name": "DB Write-Rejected(Early)",
+      "credentials": {
+        "postgres": {
+          "id": "YHX8vfWt59rfg8pc",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Params": {
+      "main": [
+        [
+          {
+            "node": "Real Data Input (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Data": {
+      "main": [
+        [
+          {
+            "node": "Viral Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Valid Data": {
+      "main": [
+        [
+          {
+            "node": "Commercial Signal Engine",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Early Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Real Data Input (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Generate Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Set Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Viral Engine": {
+      "main": [
+        [
+          {
+            "node": "Score Candidate V3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Candidate V3": {
+      "main": [
+        [
+          {
+            "node": "Filter Valid Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profit Estimate Engine": {
+      "main": [
+        [
+          {
+            "node": "Final Winner Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commercial Signal Engine": {
+      "main": [
+        [
+          {
+            "node": "Profit Estimate Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Early Rejected": {
+      "main": [
+        [
+          {
+            "node": "Validate - Rejected(Early)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Winner Decision": {
+      "main": [
+        [
+          {
+            "node": "Filter Winner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Winner": {
+      "main": [
+        [
+          {
+            "node": "Validate - Winner",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Watchlist": {
+      "main": [
+        [
+          {
+            "node": "Validate - Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Rejected": {
+      "main": [
+        [
+          {
+            "node": "Mark Final Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Final Rejected": {
+      "main": [
+        [
+          {
+            "node": "Validate - Rejected(Final)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate - Winner": {
+      "main": [
+        [
+          {
+            "node": "DB Write - Winner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate - Rejected(Final)": {
+      "main": [
+        [
+          {
+            "node": "DB Write - Rejected(Final)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate - Watchlist": {
+      "main": [
+        [
+          {
+            "node": "DB Write - Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Test Data": {
+      "main": [
+        [
+          {
+            "node": "Clean Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate - Rejected(Early)": {
+      "main": [
+        [
+          {
+            "node": "DB Write-Rejected(Early)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cadbf6c6-4408-4211-849f-040b8454fea4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b3c8c7ff386a0ae5e2097d53e0ec60259c9f06be877dc93fd7f02d308d37acf"
+  },
+  "id": "teCjpjPHcoB9OkdA",
+  "tags": [
+    {
+      "updatedAt": "2026-05-23T05:25:33.847Z",
+      "createdAt": "2026-05-23T05:25:33.847Z",
+      "id": "9p7MFDhphNdvHR6D",
+      "name": "stable"
+    },
+    {
+      "updatedAt": "2026-05-23T05:24:41.937Z",
+      "createdAt": "2026-05-23T05:24:41.937Z",
+      "id": "gh0Vh22SdKYZqc7l",
+      "name": "production"
+    },
+    {
+      "updatedAt": "2026-03-22T05:07:50.036Z",
+      "createdAt": "2026-03-22T05:07:50.036Z",
+      "id": "Vg2hdFfmT53qN1Vz",
+      "name": "selection"
+    },
+    {
+      "updatedAt": "2026-03-22T05:07:23.606Z",
+      "createdAt": "2026-03-22T05:07:23.606Z",
+      "id": "MwDRjJVceStm43Uh",
+      "name": "tiktok"
+    }
+  ]
+}

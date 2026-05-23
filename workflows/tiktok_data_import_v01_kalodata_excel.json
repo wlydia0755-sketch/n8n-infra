@@ -1,0 +1,358 @@
+{
+  "name": "tiktok_data_import_v01_kalodata_excel",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "return items.map(function(item) {\n  const data = item.json;\n\n  const tiktokUrl = String(data['TikTok链接'] || '');\n  const match = tiktokUrl.match(/product\\/([0-9]+)/);\n  const productId = match ? match[1] : '';\n\n  return {\n    json: {\n      source_platform: 'kalodata',\n      source_product_id: productId,\n      product_name: String(data['商品名称'] || ''),\n      category: String(data['类目'] || ''),\n      country: 'MY',\n      shop_name: '',\n      price: Number(data['价格(¥)'] || 0),\n      sales: Number(data['销量'] || 0),\n      gmv: Number(data['成交金额(¥)'] || 0),\n      product_url: tiktokUrl,\n      updated_at: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "02ecc275-d611-45ce-bbee-d993c9eefd43",
+      "name": "Normalize Source Data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7c63488b-fe0a-48df-b364-d54a9ec855f5",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "product_master",
+          "mode": "list",
+          "cachedResultName": "product_master"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_product_id": "={{$json.source_product_id}}",
+            "source_platform": "={{$json.source_platform}}",
+            "product_name": "={{$json.product_name}}",
+            "category": "={{$json.category}}",
+            "country": "={{$json.country}}",
+            "shop_name": "={{$json.shop_name}}",
+            "price": "={{$json.price}}",
+            "sales": "={{$json.sales}}",
+            "gmv": "={{$json.gmv}}",
+            "rating": 0
+          },
+          "matchingColumns": [
+            "source_platform",
+            "source_product_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "source_platform",
+              "displayName": "source_platform",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source_product_id",
+              "displayName": "source_product_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shop_name",
+              "displayName": "shop_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sales",
+              "displayName": "sales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "gmv",
+              "displayName": "gmv",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "product_url",
+              "displayName": "product_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "first_seen_at",
+              "displayName": "first_seen_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "last_seen_at",
+              "displayName": "last_seen_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        0
+      ],
+      "id": "943921ab-a105-4f26-9f23-8ab4a244cfa2",
+      "name": "Upsert Product Master",
+      "credentials": {
+        "postgres": {
+          "id": "sFXh7HIaaSZ9SLrY",
+          "name": "postgres_local_n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/Kalodata_Product_20260523210359_MY.xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1ed86f6f-443e-44c7-9902-7d7ccad49b0e",
+      "name": "Read Kalodata File"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0eb774af-37f6-4dfe-bfc3-5b6601976594",
+      "name": "Parse Kalodata Excel"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Normalize Source Data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Product Master",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Kalodata File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Kalodata File": {
+      "main": [
+        [
+          {
+            "node": "Parse Kalodata Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Kalodata Excel": {
+      "main": [
+        [
+          {
+            "node": "Normalize Source Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bfaa5df0-0e7f-47cc-b087-949e7606374a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b3c8c7ff386a0ae5e2097d53e0ec60259c9f06be877dc93fd7f02d308d37acf"
+  },
+  "id": "OxAY5VVxRZKCpCw7",
+  "tags": [
+    {
+      "updatedAt": "2026-05-23T14:49:31.620Z",
+      "createdAt": "2026-05-23T14:49:31.620Z",
+      "id": "QttbOtJGhOPqHmwK",
+      "name": "kaladata"
+    },
+    {
+      "updatedAt": "2026-05-23T05:25:33.847Z",
+      "createdAt": "2026-05-23T05:25:33.847Z",
+      "id": "9p7MFDhphNdvHR6D",
+      "name": "stable"
+    },
+    {
+      "updatedAt": "2026-05-23T05:22:22.461Z",
+      "createdAt": "2026-05-23T05:22:22.461Z",
+      "id": "5u7H5UUJeqhsq9fi",
+      "name": "data-import"
+    },
+    {
+      "updatedAt": "2026-05-23T05:20:09.687Z",
+      "createdAt": "2026-05-23T05:17:56.973Z",
+      "id": "bYNTX8nCW14TIydL",
+      "name": "postgres"
+    },
+    {
+      "updatedAt": "2026-03-22T05:07:23.606Z",
+      "createdAt": "2026-03-22T05:07:23.606Z",
+      "id": "MwDRjJVceStm43Uh",
+      "name": "tiktok"
+    }
+  ]
+}

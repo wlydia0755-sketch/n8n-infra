@@ -1,0 +1,76 @@
+{
+  "name": "postgres_test_connection",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "31363cd0-e0fa-4f79-95ff-e175c2c238ca",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "133ed5dc-e96c-4810-a030-9a29dce069f4",
+      "name": "Execute Test Query",
+      "credentials": {
+        "postgres": {
+          "id": "sFXh7HIaaSZ9SLrY",
+          "name": "postgres_local_n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute Test Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1323a711-3cc7-4abb-8467-9c5f8429c1ea",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b3c8c7ff386a0ae5e2097d53e0ec60259c9f06be877dc93fd7f02d308d37acf"
+  },
+  "id": "GuTyCTJ5mMEe5sDO",
+  "tags": [
+    {
+      "updatedAt": "2026-05-23T05:20:09.687Z",
+      "createdAt": "2026-05-23T05:17:56.973Z",
+      "id": "bYNTX8nCW14TIydL",
+      "name": "postgres"
+    },
+    {
+      "updatedAt": "2026-05-23T05:20:53.656Z",
+      "createdAt": "2026-05-23T05:20:53.656Z",
+      "id": "psHNY0ssxR5UCIFI",
+      "name": "infra"
+    }
+  ]
+}
