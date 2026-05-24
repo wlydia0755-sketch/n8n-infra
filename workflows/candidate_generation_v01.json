@@ -1,0 +1,315 @@
+{
+  "name": "candidate_generation_v01",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3d77896d-f200-4011-9c0f-cc38ad985730",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "product_master",
+          "mode": "list",
+          "cachedResultName": "product_master"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "sales",
+              "condition": ">=",
+              "value": "20"
+            },
+            {
+              "column": "gmv",
+              "condition": ">=",
+              "value": "50000"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "gmv",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "aaec3a8c-e398-45d6-9450-261e1757adf1",
+      "name": "Select rows from a table",
+      "credentials": {
+        "postgres": {
+          "id": "sFXh7HIaaSZ9SLrY",
+          "name": "postgres_local_n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const data = item.json;\n\n  const sales = Number(data.sales || 0);\n  const gmv = Number(data.gmv || 0);\n  const price = Number(data.price || 0);\n  const name = String(data.product_name || '').toLowerCase();\n  const category = String(data.category || '').toLowerCase();\n\n  let riskFlags = [];\n\n  if (price > 500) riskFlags.push('high_price');\n  if (name.includes('emas') || name.includes('gold') || name.includes('rm ')) {\n    riskFlags.push('possible_precious_jewelry');\n  }\n\n  const isFashionJewelry =\n    category.includes('饰品') ||\n    category.includes('jewelry') ||\n    name.includes('bracelet') ||\n    name.includes('ring') ||\n    name.includes('necklace') ||\n    name.includes('earring') ||\n    name.includes('bangle');\n\n  let candidateScore =\n    (sales * 0.25) +\n    ((gmv / 1000) * 0.35);\n\n  if (price >= 10 && price <= 80) candidateScore += 25;\n  if (price > 80 && price <= 200) candidateScore += 10;\n  if (price > 500) candidateScore -= 40;\n  if (isFashionJewelry) candidateScore += 20;\n  if (riskFlags.includes('possible_precious_jewelry')) candidateScore -= 30;\n\n  return {\n    json: {\n      source_platform: data.source_platform,\n      source_product_id: data.source_product_id,\n      product_name: data.product_name,\n      category: data.category,\n      country: data.country,\n      price: price,\n      sales: sales,\n      gmv: gmv,\n      candidate_score: Math.max(0, Number(candidateScore.toFixed(2))),\n      candidate_status: riskFlags.length ? 'watchlist' : 'pending',\n      risk_flags: riskFlags,\n      updated_at: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c2892003-b88c-40c1-8ef3-e388b57e7ce2",
+      "name": "Score Candidate"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "candidate_pool",
+          "mode": "list",
+          "cachedResultName": "candidate_pool"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "source_product_id": "={{$json.source_product_id}}",
+            "source_platform": "={{$json.source_platform}}",
+            "product_name": "={{$json.product_name}}",
+            "category": "={{$json.category}}",
+            "country": "={{$json.country}}",
+            "price": "={{$json.price}}",
+            "sales": "={{$json.sales}}",
+            "gmv": "={{$json.gmv}}",
+            "candidate_score": "={{$json.candidate_score}}",
+            "candidate_status": "={{$json.candidate_status}}",
+            "risk_flags": "={{$json.risk_flags}}"
+          },
+          "matchingColumns": [
+            "source_platform",
+            "source_product_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "source_platform",
+              "displayName": "source_platform",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source_product_id",
+              "displayName": "source_product_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sales",
+              "displayName": "sales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "gmv",
+              "displayName": "gmv",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "candidate_score",
+              "displayName": "candidate_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "candidate_status",
+              "displayName": "candidate_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "risk_flags",
+              "displayName": "risk_flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "array",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        0
+      ],
+      "id": "1c4f03cc-da22-41d2-8765-7067a8c06087",
+      "name": "Upsert Candidate Pool",
+      "credentials": {
+        "postgres": {
+          "id": "sFXh7HIaaSZ9SLrY",
+          "name": "postgres_local_n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table": {
+      "main": [
+        [
+          {
+            "node": "Score Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Candidate": {
+      "main": [
+        [
+          {
+            "node": "Upsert Candidate Pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3c29cc79-5c09-4866-9e66-dd973934c1c1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b3c8c7ff386a0ae5e2097d53e0ec60259c9f06be877dc93fd7f02d308d37acf"
+  },
+  "id": "rSFwRevfVkbrr1UB",
+  "tags": []
+}
