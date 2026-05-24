@@ -1,0 +1,624 @@
+{
+  "name": "tiktok_content_monetization_V06_lite",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "7f3254ea-4ce9-475e-8e12-72a80a4efb90",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bd1f15cb-6310-436f-a2b4-be36241d5fc4",
+      "name": "Set Params",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        -464,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e4d8325-e5ae-4e3e-a5ae-641f6cbea2fa",
+              "name": "min_views ",
+              "value": "1000",
+              "type": "string"
+            },
+            {
+              "id": "8a912e19-96ea-4417-99aa-f015e8b029e6",
+              "name": "min_score",
+              "value": "60",
+              "type": "string"
+            },
+            {
+              "id": "657aca85-423d-42c4-91f1-7782b72ce17e",
+              "name": "viral_threshold",
+              "value": "70",
+              "type": "string"
+            },
+            {
+              "id": "41159b6d-ca70-415c-8094-a058b268c3a9",
+              "name": "watchlist_score_threshold",
+              "value": "55",
+              "type": "string"
+            },
+            {
+              "id": "61930771-cbb4-447c-acf2-b98c58a8593e",
+              "name": "min_profit_score",
+              "value": "60",
+              "type": "string"
+            },
+            {
+              "id": "670d725f-d772-4a27-b940-63dad132fdd6",
+              "name": "min_commercial_score",
+              "value": "50",
+              "type": "string"
+            },
+            {
+              "id": "ed929298-7d01-4b27-9e91-be7fab46c8a4",
+              "name": "platform_fee_rate",
+              "value": "0.08",
+              "type": "string"
+            },
+            {
+              "id": "4f7e2402-1cc6-4167-a5b3-dce1fda1b9b0",
+              "name": "default_shipping_cost",
+              "value": "4.5",
+              "type": "string"
+            },
+            {
+              "id": "99d4d0cb-d1de-4f19-94b9-2839359332ae",
+              "name": "default_ad_cost",
+              "value": "0",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -688,
+        -176
+      ],
+      "id": "e72b375c-9184-45fd-9afe-001b6e3d6910",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  video_id,\n  title,\n  author,\n  views,\n  likes,\n  comments,\n  shares,\n  sell_price,\n  price,\n  product_cost,\n  supplier_cost,\n  shipping_cost,\n  platform_fee,\n  gross_profit,\n  net_profit,\n  margin_rate,\n  profit_margin,\n  base_score,\n  viral_score,\n  commercial_score,\n  profit_score,\n  final_score,\n  decision,\n  selected,\n  action,\n  winner_reason,\n  updated_at\nFROM tiktok_selection_results\nWHERE video_id LIKE 'test_v05_%'\n  AND decision IN ('WINNER', 'WATCHLIST')\nORDER BY \n  CASE \n    WHEN decision = 'WINNER' THEN 1\n    WHEN decision = 'WATCHLIST' THEN 2\n    ELSE 3\n  END,\n  final_score DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -256,
+        -176
+      ],
+      "id": "f9e4fc77-ca1e-4f50-80cf-0406b3eab257",
+      "name": "DB Read - Winners & Watchlist",
+      "credentials": {
+        "postgres": {
+          "id": "sFXh7HIaaSZ9SLrY",
+          "name": "postgres_local_n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const title = String($json.title ?? \"\").toLowerCase();\nconst decision = String($json.decision ?? \"\");\nconst price = Number($json.sell_price ?? $json.price ?? 0);\nconst netProfit = Number($json.net_profit ?? 0);\nconst marginRate = Number($json.margin_rate ?? $json.profit_margin ?? 0);\nconst viralScore = Number($json.viral_score ?? 0);\nconst commercialScore = Number($json.commercial_score ?? 0);\nconst profitScore = Number($json.profit_score ?? 0);\n\nlet audience = \"fashion jewelry buyers\";\nlet contentAngle = \"daily outfit matching\";\nlet coreSellingPoint = \"affordable style upgrade\";\nlet emotionalHook = \"make simple outfits look more expensive\";\nlet shootingDirection = \"hand display + outfit matching + close-up detail\";\n\nif (title.includes(\"gift\") || title.includes(\"couple\") || title.includes(\"name\")) {\n  audience = \"gift buyers and couples\";\n  contentAngle = \"gift scenario\";\n  coreSellingPoint = \"meaningful gift with emotional value\";\n  emotionalHook = \"a small gift that feels personal and thoughtful\";\n  shootingDirection = \"gift box opening + hand wearing + reaction shot\";\n} else if (\n  title.includes(\"pearl\") ||\n  title.includes(\"silver\") ||\n  title.includes(\"moissanite\")\n) {\n  audience = \"women who like elegant jewelry\";\n  contentAngle = \"premium look on a budget\";\n  coreSellingPoint = \"elegant design with high perceived value\";\n  emotionalHook = \"look expensive without paying luxury prices\";\n  shootingDirection = \"macro close-up + light reflection + outfit try-on\";\n} else if (title.includes(\"bracelet\") || title.includes(\"anklet\")) {\n  audience = \"young women who like daily accessories\";\n  contentAngle = \"daily wear styling\";\n  coreSellingPoint = \"easy to match and comfortable for daily wear\";\n  emotionalHook = \"one small accessory changes the whole outfit\";\n  shootingDirection = \"wrist/ankle close-up + before/after outfit comparison\";\n}\n\nlet priority = \"medium\";\n\nif (decision === \"WINNER\" && profitScore >= 80 && commercialScore >= 80) {\n  priority = \"high\";\n} else if (decision === \"WATCHLIST\") {\n  priority = \"manual_review\";\n}\n\nreturn {\n  json: {\n    ...$json,\n    target_audience: audience,\n    content_angle: contentAngle,\n    core_selling_point: coreSellingPoint,\n    emotional_hook: emotionalHook,\n    shooting_direction: shootingDirection,\n    content_priority: priority,\n    content_reason: `decision=${decision}, viral=${viralScore}, commercial=${commercialScore}, profit=${profitScore}, net_profit=${netProfit}, margin=${marginRate}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        -176
+      ],
+      "id": "2c156afd-0f6f-441d-99b4-71bf42ef0466",
+      "name": "AI Content Angle"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const title = $json.title ?? \"this jewelry item\";\nconst angle = $json.content_angle ?? \"daily outfit matching\";\nconst hook = $json.emotional_hook ?? \"make simple outfits look more expensive\";\nconst sellingPoint = $json.core_selling_point ?? \"affordable style upgrade\";\nconst shooting = $json.shooting_direction ?? \"hand display + close-up detail\";\nconst decision = $json.decision ?? \"WATCHLIST\";\n\nconst scriptType = decision === \"WINNER\"\n  ? \"direct_test_script\"\n  : \"soft_test_script\";\n\nconst shortVideoScript = {\n  script_type: scriptType,\n  hook_0_3s: `POV: ${hook}.`,\n  scene_3_8s: `Show ${title} in a close-up shot. Focus on texture, shine, and wearing effect.`,\n  scene_8_15s: `Use angle: ${angle}. Show before/after styling or gift scenario.`,\n  scene_15_22s: `Highlight selling point: ${sellingPoint}. Use hand display and detail close-up.`,\n  scene_22_30s: decision === \"WINNER\"\n    ? \"Add CTA: limited test price, tap the product link, or comment 'link'.\"\n    : \"Add soft CTA: would you wear this? comment your style choice.\",\n  shooting_notes: shooting\n};\n\nreturn {\n  json: {\n    ...$json,\n    script_type: scriptType,\n    hook_0_3s: shortVideoScript.hook_0_3s,\n    scene_3_8s: shortVideoScript.scene_3_8s,\n    scene_8_15s: shortVideoScript.scene_8_15s,\n    scene_15_22s: shortVideoScript.scene_15_22s,\n    scene_22_30s: shortVideoScript.scene_22_30s,\n    shooting_notes: shortVideoScript.shooting_notes,\n    full_script_json: JSON.stringify(shortVideoScript)\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -176
+      ],
+      "id": "6bcbc7d1-df92-433d-a65e-7feb4eeb1624",
+      "name": "Short Video Script"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const decision = $json.decision ?? \"WATCHLIST\";\nconst finalScore = Number($json.final_score ?? 0);\nconst netProfit = Number($json.net_profit ?? 0);\nconst marginRate = Number($json.margin_rate ?? $json.profit_margin ?? 0);\n\nlet testLevel = \"observe\";\nlet videoCount = 1;\nlet testBudget = 0;\nlet taskAction = \"manual_review\";\n\nif (decision === \"WINNER\") {\n  testLevel = \"priority_test\";\n  videoCount = 3;\n  testBudget = 20;\n  taskAction = \"create_3_videos_and_prepare_product_test\";\n} else if (decision === \"WATCHLIST\") {\n  testLevel = \"light_test\";\n  videoCount = 1;\n  testBudget = 5;\n  taskAction = \"create_1_video_and_review_comments\";\n}\n\nconst successCriteria = decision === \"WINNER\"\n  ? \"3 videos tested; check CTR, comments, product clicks, add-to-cart, and conversion signals.\"\n  : \"1 video tested; check comments, saves, shares, and buyer intent before scaling.\";\n\nreturn {\n  json: {\n    ...$json,\n\n    test_level: testLevel,\n    recommended_video_count: videoCount,\n    suggested_test_budget_usd: testBudget,\n    task_action: taskAction,\n    success_criteria: successCriteria,\n    task_status: \"pending\",\n    task_created_at: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -176
+      ],
+      "id": "161dfaf7-f327-41a7-9da6-5e2077791e6c",
+      "name": "Test Task Plan"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "content_test_tasks",
+          "mode": "list",
+          "cachedResultName": "content_test_tasks"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "final_score": "={{$json.final_score}}",
+            "net_profit": "={{$json.net_profit}}",
+            "margin_rate": "={{$json.margin_rate}}",
+            "recommended_video_count": "={{$json.recommended_video_count}}",
+            "suggested_test_budget_usd": "={{$json.suggested_test_budget_usd}}",
+            "video_id": "={{$json.video_id}}",
+            "title": "={{$json.title}}",
+            "decision": "={{$json.decision}}",
+            "target_audience": "={{$json.target_audience}}",
+            "content_angle": "={{$json.content_angle}}",
+            "core_selling_point": "={{$json.core_selling_point}}",
+            "emotional_hook": "={{$json.emotional_hook}}",
+            "shooting_direction": "={{$json.shooting_direction}}",
+            "content_priority": "={{$json.content_priority}}",
+            "content_reason": "={{$json.content_reason}}",
+            "script_type": "={{$json.script_type}}",
+            "hook_0_3s": "={{$json.hook_0_3s}}",
+            "scene_3_8s": "={{$json.scene_3_8s}}",
+            "scene_8_15s": "={{$json.scene_8_15s}}",
+            "scene_15_22s": "={{$json.scene_15_22s}}",
+            "scene_22_30s": "={{$json.scene_22_30s}}",
+            "shooting_notes": "={{$json.shooting_notes}}",
+            "full_script_json": "={{$json.full_script_json}}",
+            "test_level": "={{$json.test_level}}",
+            "task_action": "={{$json.task_action}}",
+            "success_criteria": "={{$json.success_criteria}}",
+            "task_status": "={{$json.task_status}}"
+          },
+          "matchingColumns": [
+            "video_id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "decision",
+              "displayName": "decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "final_score",
+              "displayName": "final_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "net_profit",
+              "displayName": "net_profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "margin_rate",
+              "displayName": "margin_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "target_audience",
+              "displayName": "target_audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "content_angle",
+              "displayName": "content_angle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "core_selling_point",
+              "displayName": "core_selling_point",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "emotional_hook",
+              "displayName": "emotional_hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shooting_direction",
+              "displayName": "shooting_direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "content_priority",
+              "displayName": "content_priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "content_reason",
+              "displayName": "content_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "script_type",
+              "displayName": "script_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "hook_0_3s",
+              "displayName": "hook_0_3s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "scene_3_8s",
+              "displayName": "scene_3_8s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "scene_8_15s",
+              "displayName": "scene_8_15s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "scene_15_22s",
+              "displayName": "scene_15_22s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "scene_22_30s",
+              "displayName": "scene_22_30s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "shooting_notes",
+              "displayName": "shooting_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "full_script_json",
+              "displayName": "full_script_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "test_level",
+              "displayName": "test_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "recommended_video_count",
+              "displayName": "recommended_video_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "suggested_test_budget_usd",
+              "displayName": "suggested_test_budget_usd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "task_action",
+              "displayName": "task_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "success_criteria",
+              "displayName": "success_criteria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "task_status",
+              "displayName": "task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        544,
+        -176
+      ],
+      "id": "4a98cd59-cdd7-4475-8b68-ab2f57e5a394",
+      "name": "DB Write - Content Tasks",
+      "credentials": {
+        "postgres": {
+          "id": "sFXh7HIaaSZ9SLrY",
+          "name": "postgres_local_n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Params": {
+      "main": [
+        [
+          {
+            "node": "DB Read - Winners & Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Set Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB Read - Winners & Watchlist": {
+      "main": [
+        [
+          {
+            "node": "AI Content Angle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Content Angle": {
+      "main": [
+        [
+          {
+            "node": "Short Video Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Short Video Script": {
+      "main": [
+        [
+          {
+            "node": "Test Task Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Task Plan": {
+      "main": [
+        [
+          {
+            "node": "DB Write - Content Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b6f38726-1097-4322-a396-4ddee449ac62",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b3c8c7ff386a0ae5e2097d53e0ec60259c9f06be877dc93fd7f02d308d37acf"
+  },
+  "id": "EMDBrGw1xjljdQkC",
+  "tags": [
+    {
+      "updatedAt": "2026-05-23T05:25:33.847Z",
+      "createdAt": "2026-05-23T05:25:33.847Z",
+      "id": "9p7MFDhphNdvHR6D",
+      "name": "stable"
+    },
+    {
+      "updatedAt": "2026-05-23T05:24:41.937Z",
+      "createdAt": "2026-05-23T05:24:41.937Z",
+      "id": "gh0Vh22SdKYZqc7l",
+      "name": "production"
+    },
+    {
+      "updatedAt": "2026-03-22T05:07:50.036Z",
+      "createdAt": "2026-03-22T05:07:50.036Z",
+      "id": "Vg2hdFfmT53qN1Vz",
+      "name": "selection"
+    },
+    {
+      "updatedAt": "2026-03-22T05:07:23.606Z",
+      "createdAt": "2026-03-22T05:07:23.606Z",
+      "id": "MwDRjJVceStm43Uh",
+      "name": "tiktok"
+    }
+  ]
+}
